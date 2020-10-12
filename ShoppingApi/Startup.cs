@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using ShoppingApi.Domain;
+using ShoppingApi.Profiles;
 
 namespace ShoppingApi
 {
@@ -32,6 +34,17 @@ namespace ShoppingApi
             services.AddDbContext<ShoppingDataContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("shopping"))
             );
+
+            //var mapperConfiguration = Configuration.GetValue<ConfigurationForMapper>("Mapper");
+            services.Configure<ConfigurationForMapper>(Configuration.GetSection("Mapper"));
+            var mapperConfig = new MapperConfiguration(opt =>
+            {
+                opt.AddProfile(new CatalogProfile(Configuration.Get<ConfigurationForMapper>()));
+            });
+
+            IMapper mapper = mapperConfig.CreateMapper();
+            services.AddSingleton<IMapper>(mapper);
+            services.AddSingleton<MapperConfiguration>(mapperConfig);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
