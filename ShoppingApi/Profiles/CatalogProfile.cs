@@ -1,11 +1,7 @@
 ﻿using AutoMapper;
-using Microsoft.Extensions.Configuration;
 using ShoppingApi.Domain;
 using ShoppingApi.Models.Catalog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using ShoppingApi.Models.Catalog.Curbside;
 
 namespace ShoppingApi.Profiles
 {
@@ -19,6 +15,9 @@ namespace ShoppingApi.Profiles
 
             CreateMap<PostCatalogRequest, ShoppingItem>()
                 .ForMember(dest => dest.InInventory, opt => opt.MapFrom(src => true));
+
+            CreateMap<PostCurbsideOrderRequest, CurbsideOrder>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => CurbsideOrderStatus.Pending));
         }
     }
 }

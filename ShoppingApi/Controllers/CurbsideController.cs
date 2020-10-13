@@ -1,36 +1,56 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using ShoppingApi.Domain;
-using ShoppingApi.Models;
 using ShoppingApi.Models.Catalog.Curbside;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ShoppingApi.Controllers
 {
     public class CurbsideController : ControllerBase
     {
-        private readonly ShoppingDataContext _context;
 
-        public CurbsideController(ShoppingDataContext context)
+        private readonly IDoCurbsideQueries _curbsideQueries;
+        private readonly IDoCurbsideCommands _curbsideCommands;
+
+        public CurbsideController(IDoCurbsideQueries curbsideQueries, IDoCurbsideCommands curbsideCommands)
         {
-            _context = context;
+            _curbsideQueries = curbsideQueries;
+            _curbsideCommands = curbsideCommands;
         }
+
+        [HttpPost("curbsideorders")]
+        public async Task<ActionResult> AddAnOrder([FromBody] PostCurbsideOrderRequest orderToPlace)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            else
+            {
+                CurbsideOrder response = await _curbsideCommands.AddOrder(orderToPlace);
+                return CreatedAtRoute("curbside#getbyid", new { orderId = response.Id }, response);
+            }
+        }
+
 
         [HttpGet("curbsideorders")]
         public async Task<ActionResult> GetAllOrders()
         {
-            var response = new GetCurbsideOrdersResponse();
-            var data = await _context.CurbsideOrders.ToListAsync();
-            response.Data = data;
-            response.NumberOfApprovedOrders = response.Data.Count(o => o.Status == CurbsideOrderStatus.Approved);
-            response.NumberOfDeniedOrders = response.Data.Count(o => o.Status == CurbsideOrderStatus.Denied);
-            response.NumberOffulfilledOrders = response.Data.Count(o => o.Status == CurbsideOrderStatus.Fulfilled);
-            response.NumberOfPendingOrders = response.Data.Count(o => o.Status == CurbsideOrderStatus.Pending);
+            GetCurbsideOrdersResponse response = await _curbsideQueries.GetAll();
 
             return Ok(response);
+        }
+        [HttpGet("curbsideorders/{orderId:int}", Name = "curbside#getbyid")]
+        public async Task<ActionResult> GetOrderById(int orderId)
+        {
+            CurbsideOrder response = await _curbsideQueries.GetById(orderId);
+            if (response == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                return Ok(response);
+            }
         }
     }
 }
